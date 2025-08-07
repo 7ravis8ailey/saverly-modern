@@ -1,0 +1,369 @@
+/**
+ * Enhanced Subscription Management Dialog
+ * Supports multiple tiers with dynamic pricing and features
+ */
+
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '@/components/auth/auth-provider'
+import { subscriptionManager, type SubscriptionPlan } from '@/lib/revenue-management'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
+import { 
+  Check, 
+  X, 
+  Crown, 
+  Users, 
+  Zap, 
+  BarChart3, 
+  MapPin, 
+  Clock,
+  Sparkles,
+  Loader2
+} from 'lucide-react'
+
+interface EnhancedSubscriptionDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currentPlan?: string
+}
+
+export function EnhancedSubscriptionDialog({ 
+  open, 
+  onOpenChange,
+  currentPlan = 'free'
+}: EnhancedSubscriptionDialogProps) {
+  const { user } = useAuth()
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [loading, setLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState<string | null>(null)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [selectedPlan, setSelectedPlan] = useState<string>(currentPlan)
+
+  useEffect(() => {
+    loadPlans()
+  }, [])
+
+  const loadPlans = async () => {
+    try {
+      const data = await subscriptionManager.getConsumerPlans()
+      setPlans(data)
+    } catch (error) {
+      console.error('Error loading plans:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpgrade = async (planSlug: string) => {
+    if (!user) return
+    
+    setUpgrading(planSlug)
+    try {
+      const result = await subscriptionManager.changeSubscription(
+        user.uid, 
+        planSlug, 
+        billingCycle
+      )
+      
+      if (result.success) {
+        setSelectedPlan(planSlug)
+        onOpenChange(false)
+        // Refresh user data
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('Error upgrading subscription:', error)
+    } finally {
+      setUpgrading(null)
+    }
+  }
+
+  const getPlanIcon = (tierLevel: number) => {
+    switch (tierLevel) {
+      case 0: return <MapPin className="h-5 w-5" />
+      case 1: return <Zap className="h-5 w-5" />
+      case 2: return <Crown className="h-5 w-5" />
+      case 3: return <Users className="h-5 w-5" />
+      default: return <Sparkles className="h-5 w-5" />
+    }
+  }
+
+  const getPlanColor = (tierLevel: number) => {
+    switch (tierLevel) {
+      case 0: return 'border-gray-200'
+      case 1: return 'border-blue-200'
+      case 2: return 'border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50'
+      case 3: return 'border-green-200 bg-gradient-to-br from-green-50 to-blue-50'
+      default: return 'border-gray-200'
+    }
+  }
+
+  const formatPrice = (plan: SubscriptionPlan) => {
+    if (plan.tier_level === 0) return 'Free'
+    
+    const price = billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly
+    const monthlyEquivalent = billingCycle === 'yearly' ? price / 12 : price
+    
+    return (
+      <div className="text-center">
+        <div className="text-3xl font-bold">
+          ${price.toFixed(2)}
+          <span className="text-lg font-normal text-gray-600">
+            /{billingCycle === 'yearly' ? 'year' : 'month'}
+          </span>
+        </div>
+        {billingCycle === 'yearly' && plan.annual_discount_percent > 0 && (
+          <div className="text-sm text-green-600">
+            Save ${((plan.price_monthly * 12) - plan.price_yearly).toFixed(2)}/year
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderFeatures = (plan: SubscriptionPlan) => {
+    const features = []
+    
+    // Redemptions
+    if (plan.max_redemptions_per_month === 0) {
+      features.push({ icon: <Check className="h-4 w-4" />, text: 'Unlimited redemptions', included: true })
+    } else {
+      features.push({ 
+        icon: plan.max_redemptions_per_month > 0 ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />, 
+        text: `${plan.max_redemptions_per_month} redemptions/month`, 
+        included: plan.max_redemptions_per_month > 0 
+      })
+    }
+
+    // Location radius
+    features.push({ 
+      icon: <MapPin className="h-4 w-4" />, 
+      text: `${plan.max_location_radius} mile radius`, 
+      included: true 
+    })
+
+    // Premium features
+    if (plan.exclusive_coupons_access) {
+      features.push({ icon: <Sparkles className="h-4 w-4" />, text: 'Exclusive premium coupons', included: true })
+    }
+
+    if (plan.early_access_hours > 0) {
+      features.push({ 
+        icon: <Clock className="h-4 w-4" />, 
+        text: `${plan.early_access_hours}h early access`, 
+        included: true 
+      })
+    }
+
+    if (plan.analytics_access) {
+      features.push({ icon: <BarChart3 className="h-4 w-4" />, text: 'Savings analytics', included: true })
+    }
+
+    if (plan.family_accounts > 1) {
+      features.push({ 
+        icon: <Users className="h-4 w-4" />, 
+        text: `Up to ${plan.family_accounts} family accounts`, 
+        included: true 
+      })
+    }
+
+    if (plan.priority_support) {
+      features.push({ icon: <Check className="h-4 w-4" />, text: 'Priority customer support', included: true })
+    }
+
+    return features
+  }
+
+  if (loading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center pb-4">
+          <DialogTitle className="text-2xl font-bold">
+            Choose Your Saverly Plan
+          </DialogTitle>
+          <DialogDescription className="text-lg">
+            Save more with exclusive deals and premium features
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <span className={billingCycle === 'monthly' ? 'font-semibold' : 'text-gray-600'}>
+            Monthly
+          </span>
+          <Switch
+            checked={billingCycle === 'yearly'}
+            onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
+          />
+          <span className={billingCycle === 'yearly' ? 'font-semibold' : 'text-gray-600'}>
+            Yearly
+          </span>
+          {billingCycle === 'yearly' && (
+            <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+              Save up to 20%
+            </Badge>
+          )}
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          {plans.map((plan) => {
+            const isCurrentPlan = plan.slug === currentPlan
+            const isSelected = plan.slug === selectedPlan
+            const isUpgrading = upgrading === plan.slug
+
+            return (
+              <Card
+                key={plan.uid}
+                className={`relative transition-all duration-200 hover:shadow-lg ${getPlanColor(plan.tier_level)} ${
+                  isSelected ? 'ring-2 ring-blue-500' : ''
+                } ${plan.tier_level === 2 ? 'scale-105 border-purple-300' : ''}`}
+              >
+                {plan.tier_level === 2 && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-purple-600 text-white px-3 py-1">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pb-4">
+                  <div className="flex items-center justify-center mb-2">
+                    {getPlanIcon(plan.tier_level)}
+                  </div>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription className="h-12 flex items-center justify-center">
+                    {formatPrice(plan)}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {/* Features List */}
+                  <div className="space-y-2">
+                    {renderFeatures(plan).map((feature, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-center gap-2 text-sm ${
+                          feature.included ? 'text-gray-900' : 'text-gray-400'
+                        }`}
+                      >
+                        <div className={feature.included ? 'text-green-500' : 'text-gray-300'}>
+                          {feature.icon}
+                        </div>
+                        <span>{feature.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  {/* Action Button */}
+                  <div className="pt-2">
+                    {isCurrentPlan ? (
+                      <Button disabled className="w-full">
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleUpgrade(plan.slug)}
+                        disabled={isUpgrading}
+                        className={`w-full ${
+                          plan.tier_level === 0 
+                            ? 'bg-gray-600 hover:bg-gray-700' 
+                            : plan.tier_level === 2
+                            ? 'bg-purple-600 hover:bg-purple-700'
+                            : ''
+                        }`}
+                        variant={plan.tier_level === 0 ? 'secondary' : 'default'}
+                      >
+                        {isUpgrading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {plan.tier_level === 0 ? 'Downgrading...' : 'Upgrading...'}
+                          </>
+                        ) : (
+                          <>
+                            {plan.tier_level === 0 ? 'Downgrade' : 
+                             plan.tier_level > (plans.find(p => p.slug === currentPlan)?.tier_level || 0) ? 'Upgrade' : 'Switch'}
+                            {plan.tier_level > 0 && ` - $${billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly}`}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Additional Info */}
+                  {plan.tier_level === 0 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Perfect for trying Saverly
+                    </p>
+                  )}
+                  {plan.tier_level === 1 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Great for regular savers
+                    </p>
+                  )}
+                  {plan.tier_level === 2 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Maximum savings potential
+                    </p>
+                  )}
+                  {plan.tier_level === 3 && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Perfect for families
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold mb-2">Frequently Asked Questions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-medium">Can I change plans anytime?</p>
+              <p className="text-gray-600">Yes, you can upgrade or downgrade at any time.</p>
+            </div>
+            <div>
+              <p className="font-medium">What happens to unused redemptions?</p>
+              <p className="text-gray-600">Redemptions reset each month and don't roll over.</p>
+            </div>
+            <div>
+              <p className="font-medium">Do you offer refunds?</p>
+              <p className="text-gray-600">Yes, cancel anytime for a prorated refund.</p>
+            </div>
+            <div>
+              <p className="font-medium">Are there setup fees?</p>
+              <p className="text-gray-600">No setup fees or long-term commitments.</p>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

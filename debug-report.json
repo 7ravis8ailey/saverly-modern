@@ -1,0 +1,171 @@
+{
+  "timestamp": "2025-08-06T18:46:48.739Z",
+  "overallStatus": {
+    "score": 100,
+    "status": "excellent"
+  },
+  "results": {
+    "serverStatus": {
+      "status": "success",
+      "httpCode": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.stripe.com https://maps.googleapis.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; upgrade-insecure-requests",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "x-frame-options": "DENY",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "geolocation=(), microphone=(), camera=()",
+        "server": "",
+        "x-powered-by": "",
+        "access-control-allow-methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+        "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info",
+        "access-control-allow-credentials": "true",
+        "content-type": "text/html",
+        "cache-control": "no-cache",
+        "etag": "W/\"26d-FWNgjdjsUxv3WKKwOox+pNSjR8w\"",
+        "cross-origin-embedder-policy": "credentialless",
+        "cross-origin-opener-policy": "same-origin-allow-popups",
+        "date": "Wed, 06 Aug 2025 18:46:44 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "content-length": "621"
+      },
+      "responseTime": 10000,
+      "contentType": "text/html"
+    },
+    "htmlStructure": {
+      "status": "success",
+      "hasRootDiv": true,
+      "hasMainScript": true,
+      "hasViteScript": true,
+      "title": "Vite + React + TS",
+      "htmlLength": 75898,
+      "responseStatus": 200
+    },
+    "reactMounting": {
+      "status": "success",
+      "rootPopulated": true,
+      "rootContentLength": 17146,
+      "rootContentPreview": "<div class=\"min-h-screen bg-gray-50\"><nav class=\"bg-white shadow-sm border-b\" role=\"navigation\" aria-label=\"Main navigation\"><div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\"><div class=\"flex justif...",
+      "hasReactDevTools": true,
+      "hasRouterElement": true,
+      "hasNavbar": true,
+      "hasMainContent": true,
+      "detectedFrameworks": [
+        "React DevTools"
+      ]
+    },
+    "consoleErrors": [
+      {
+        "type": "network",
+        "message": "Failed to load: https://js.stripe.com/v3/controller-with-preconnect-2adde5f0ec7c1c68b3ab10b682908b5d.html - net::ERR_BLOCKED_BY_RESPONSE",
+        "timestamp": "2025-08-06T18:46:45.521Z"
+      },
+      {
+        "type": "network",
+        "message": "Failed to load: https://js.stripe.com/v3/controller-with-preconnect-2adde5f0ec7c1c68b3ab10b682908b5d.html - net::ERR_BLOCKED_BY_RESPONSE",
+        "timestamp": "2025-08-06T18:46:48.195Z"
+      }
+    ],
+    "cssLoading": {
+      "status": "success",
+      "stylesheets": [
+        {
+          "type": "style",
+          "href": "inline",
+          "disabled": false,
+          "media": "all"
+        }
+      ],
+      "stylesheetsCount": 1,
+      "rootStyles": {
+        "display": "block",
+        "minHeight": "0px",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+      },
+      "hasTailwindClasses": true,
+      "tailwindElementsFound": 106
+    },
+    "keyElements": {
+      "status": "success",
+      "elements": {
+        "navbar": {
+          "found": true,
+          "count": 1
+        },
+        "logo": {
+          "found": false,
+          "count": 0
+        },
+        "saverlyText": {
+          "found": false,
+          "error": "page.$$: Unknown engine \"text*\" while parsing selector text*=\"Saverly\""
+        },
+        "navigation": {
+          "found": true,
+          "count": 13
+        },
+        "mainContent": {
+          "found": true,
+          "count": 1
+        },
+        "authForms": {
+          "found": false,
+          "count": 0
+        },
+        "businessElements": {
+          "found": false,
+          "error": "page.$$: Unknown engine \"text*\" while parsing selector text*=\"Business\", text*=\"Coupon\", text*=\"Local\""
+        }
+      },
+      "totalElementsFound": 15
+    },
+    "apiEndpoints": {
+      "status": "success",
+      "endpoints": {
+        "/api/health": {
+          "status": "success",
+          "httpCode": 200,
+          "responseTime": 5000,
+          "hasData": true
+        },
+        "/api/auth/session": {
+          "status": "success",
+          "httpCode": 200,
+          "responseTime": 5000,
+          "hasData": true
+        },
+        "/api/businesses": {
+          "status": "success",
+          "httpCode": 200,
+          "responseTime": 5000,
+          "hasData": true
+        }
+      },
+      "totalTested": 3,
+      "successfulRequests": 3
+    },
+    "performance": {
+      "status": "success",
+      "pageLoadTime": 579,
+      "metrics": {
+        "domContentLoaded": 0,
+        "loadComplete": 0.10000038146972656,
+        "firstPaint": 32,
+        "firstContentfulPaint": 80
+      },
+      "rating": "excellent"
+    },
+    "recommendations": []
+  },
+  "recommendations": [],
+  "summary": {
+    "criticalIssues": 0,
+    "highPriorityIssues": 0,
+    "totalErrors": 2,
+    "healthScore": 100
+  }
+}

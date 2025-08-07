@@ -1,0 +1,5 @@
+import { BackendConnectionTest } from '@/test-backend-connection';
+
+export default function TestPage() {
+  return <BackendConnectionTest />;
+}

@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --saverly-green: #3ABF7E;
+  --card-bg: #F7FAFC;
+  --text-dark: #1A202C;
+  --text-gray: #718096;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 153 48% 49%; /* #3ABF7E */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 173 52% 39%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 98%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 134 45% 57%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 134 45% 57%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 134 45% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer components {
+  /* Original Saverly Dashboard Styles */
+  .dashboard-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-dark);
+  }
+
+  .dashboard-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 32px;
+    background: linear-gradient(to bottom right, #f8fafc, #ffffff);
+  }
+
+  .metric-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: var(--card-bg);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    padding: 24px;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .metric-title {
+    color: var(--saverly-green);
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .metric-description {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-gray);
+  }
+
+  .navbar-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    color: var(--text-gray);
+    font-weight: 500;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .navbar-item:hover {
+    color: var(--saverly-green);
+  }
+
+  .navbar-item.active {
+    border-bottom: 2px solid var(--saverly-green);
+    color: var(--saverly-green);
+  }
+
+  /* Saverly Brand Utilities */
+  .bg-saverly-gradient {
+    background: linear-gradient(120deg, var(--saverly-green) 0%, #2a9d8f 100%);
+  }
+  
+  .text-saverly-green {
+    color: var(--saverly-green);
+  }
+  
+  .hover\:bg-saverly-green:hover {
+    background-color: var(--saverly-green);
+  }
+  
+  /* Interactive Elements */
+  .saverly-button {
+    @apply px-6 py-3 text-white rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg;
+    background-color: var(--saverly-green);
+  }
+  
+  .saverly-button:hover {
+    background-color: #34a670;
+    transform: translateY(-1px);
+  }
+  
+  .saverly-card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-200 p-6;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .gradient-hover {
+    @apply relative overflow-hidden transition-colors;
+    background: linear-gradient(120deg, var(--saverly-green) 0%, #2a9d8f 100%);
+  }
+
+  .gradient-hover:before {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-200;
+    background: linear-gradient(120deg, #2a9d8f 0%, var(--saverly-green) 100%);
+  }
+
+  .gradient-hover:hover:before {
+    @apply opacity-100;
+  }
+  
+  /* Legacy class mappings for compatibility */
+  .saverly-gradient-text {
+    background: linear-gradient(to right, var(--saverly-green), var(--saverly-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .saverly-card-hover {
+    @apply card-hover;
+  }
+  
+  .saverly-button-primary {
+    @apply saverly-button;
+  }
+  
+  .saverly-button-secondary {
+    background-color: #2a9d8f;
+  }
+  
+  .saverly-button-secondary:hover {
+    background-color: #248a7a;
+  }
+}

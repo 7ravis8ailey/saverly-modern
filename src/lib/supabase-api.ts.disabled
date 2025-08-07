@@ -1,0 +1,275 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Import types from centralized location
+export type { User, AuthUser, AuthError, AuthResponse, Business, Coupon, Redemption, UserPreferences } from '@/types';
+
+// API Functions with improved type safety
+export const api = {
+  // Auth functions
+  auth: {
+    signUp: async (email: string, password: string, metadata?: Record<string, unknown>): Promise<AuthResponse> => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      });
+      return { data: data.user, error };
+    },
+
+    signIn: async (email: string, password: string): Promise<AuthResponse> => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      return { data: data.user, error };
+    },
+
+    signOut: async (): Promise<{ error: AuthError | null }> => {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    },
+
+    getUser: async (): Promise<{ user: AuthUser | null; error: AuthError | null }> => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      return { user, error };
+    }
+  },
+
+  // Users functions
+  users: {
+    create: async (userData: Partial<User>) => {
+      const { data, error } = await supabase
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
+      return { data, error };
+    },
+
+    getById: async (id: string) => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return { data, error };
+    },
+
+    update: async (id: string, updates: Partial<User>) => {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    }
+  },
+
+  // Businesses functions
+  businesses: {
+    getAll: async () => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    getById: async (id: string) => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return { data, error };
+    },
+
+    create: async (businessData: Omit<Business, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .insert(businessData)
+        .select()
+        .single();
+      return { data, error };
+    },
+
+    update: async (id: string, updates: Partial<Business>) => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    }
+  },
+
+  // Coupons functions
+  coupons: {
+    getAll: async () => {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select(`
+          *,
+          business:businesses(*)
+        `)
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    getById: async (id: string) => {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select(`
+          *,
+          business:businesses(*)
+        `)
+        .eq('id', id)
+        .single();
+      return { data, error };
+    },
+
+    getByBusiness: async (businessId: string) => {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    create: async (couponData: Omit<Coupon, 'id' | 'created_at' | 'updated_at' | 'business'>) => {
+      const { data, error } = await supabase
+        .from('coupons')
+        .insert(couponData)
+        .select()
+        .single();
+      return { data, error };
+    },
+
+    update: async (id: string, updates: Partial<Coupon>) => {
+      const { data, error } = await supabase
+        .from('coupons')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    }
+  },
+
+  // Redemptions functions
+  redemptions: {
+    create: async (redemptionData: Omit<Redemption, 'id' | 'created_at'>) => {
+      const { data, error } = await supabase
+        .from('redemptions')
+        .insert(redemptionData)
+        .select()
+        .single();
+      return { data, error };
+    },
+
+    getByUser: async (userId: string) => {
+      const { data, error } = await supabase
+        .from('redemptions')
+        .select(`
+          *,
+          coupon:coupons(*),
+          business:businesses(*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    getByBusiness: async (businessId: string) => {
+      const { data, error } = await supabase
+        .from('redemptions')
+        .select(`
+          *,
+          coupon:coupons(*),
+          user:users(full_name, email)
+        `)
+        .eq('business_id', businessId)
+        .order('created_at', { ascending: false });
+      return { data, error };
+    },
+
+    checkUsageLimit: async (userId: string, couponId: string) => {
+      const { data, error } = await supabase
+        .rpc('check_coupon_usage_limit', {
+          p_user_id: userId,
+          p_coupon_id: couponId
+        });
+      return { data, error };
+    },
+
+    update: async (id: string, updates: Partial<Redemption>) => {
+      const { data, error } = await supabase
+        .from('redemptions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      return { data, error };
+    }
+  },
+
+  // Utility functions
+  utils: {
+    calculateDistance: async (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const { data, error } = await supabase
+        .rpc('calculate_distance', {
+          lat1,
+          lon1,
+          lat2,
+          lon2
+        });
+      return { data, error };
+    },
+
+    generateQRCode: async () => {
+      const { data, error } = await supabase
+        .rpc('generate_qr_code');
+      return { data, error };
+    }
+  }
+};
+
+// Real-time subscriptions
+export const subscriptions = {
+  onCouponsChange: (callback: (payload: any) => void) => {
+    return supabase
+      .channel('coupons')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'coupons' }, 
+        callback
+      )
+      .subscribe();
+  },
+
+  onRedemptionsChange: (callback: (payload: any) => void) => {
+    return supabase
+      .channel('redemptions')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'redemptions' }, 
+        callback
+      )
+      .subscribe();
+  }
+};

@@ -1,0 +1,551 @@
+/**
+ * Saverly Revenue Management System
+ * Handles multi-stream revenue architecture including subscriptions, commissions, and payments
+ */
+
+import { supabase } from './supabase'
+import { stripe } from './stripe'
+import type Stripe from 'stripe'
+
+// =====================================================
+// TYPE DEFINITIONS
+// =====================================================
+
+export interface SubscriptionPlan {
+  uid: string
+  name: string
+  slug: string
+  tier_level: number
+  price_monthly: number
+  price_yearly: number
+  annual_discount_percent: number
+  features: Record<string, any>
+  limitations: Record<string, any>
+  max_redemptions_per_month: number
+  max_location_radius: number
+  max_favorite_businesses: number
+  priority_support: boolean
+  early_access_hours: number
+  exclusive_coupons_access: boolean
+  analytics_access: boolean
+  group_purchasing: boolean
+  family_accounts: number
+  is_active: boolean
+  stripe_price_id_monthly?: string
+  stripe_price_id_yearly?: string
+}
+
+export interface BusinessSubscriptionPlan {
+  uid: string
+  name: string
+  slug: string
+  tier_level: number
+  price_monthly: number
+  base_commission_rate: number
+  processing_fee_discount: number
+  max_active_coupons: number
+  max_locations: number
+  analytics_level: 'basic' | 'advanced' | 'enterprise'
+  api_access: boolean
+  priority_support: boolean
+  features: Record<string, any>
+}
+
+export interface RevenueTransaction {
+  uid: string
+  transaction_type: 'consumer_subscription' | 'business_subscription' | 'commission' | 'advertising' | 'processing_fee'
+  business_uid?: string
+  user_uid?: string
+  gross_amount: number
+  net_amount: number
+  fee_amount: number
+  commission_amount: number
+  currency: string
+  stripe_payment_intent_id?: string
+  description?: string
+  metadata: Record<string, any>
+  status: 'pending' | 'completed' | 'failed' | 'refunded'
+  processed_at: string
+}
+
+export interface CommissionCalculation {
+  base_rate: number
+  volume_discount: number
+  performance_bonus: number
+  final_rate: number
+  estimated_monthly_commission: number
+}
+
+export interface UsageLimits {
+  redemptions_used: number
+  redemptions_remaining: number
+  location_radius: number
+  premium_access: boolean
+  early_access_hours: number
+  analytics_access: boolean
+}
+
+// =====================================================
+// SUBSCRIPTION MANAGEMENT SERVICE
+// =====================================================
+
+export class SubscriptionManager {
+  /**
+   * Get all available consumer subscription plans
+   */
+  async getConsumerPlans(): Promise<SubscriptionPlan[]> {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('tier_level')
+
+    if (error) throw error
+    return data || []
+  }
+
+  /**
+   * Get all available business subscription plans
+   */
+  async getBusinessPlans(): Promise<BusinessSubscriptionPlan[]> {
+    const { data, error } = await supabase
+      .from('business_subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('tier_level')
+
+    if (error) throw error
+    return data || []
+  }
+
+  /**
+   * Upgrade/downgrade user subscription
+   */
+  async changeSubscription(
+    userId: string,
+    newPlanSlug: string,
+    billingCycle: 'monthly' | 'yearly' = 'monthly'
+  ): Promise<{ success: boolean; subscription?: Stripe.Subscription }> {
+    try {
+      // Get current user and subscription info
+      const { data: user } = await supabase
+        .from('users')
+        .select('stripe_customer_id, stripe_subscription_id, subscription_plan')
+        .eq('uid', userId)
+        .single()
+
+      if (!user) throw new Error('User not found')
+
+      // Get new plan details
+      const { data: newPlan } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('slug', newPlanSlug)
+        .single()
+
+      if (!newPlan) throw new Error('Subscription plan not found')
+
+      // Handle free tier (cancel existing subscription)
+      if (newPlan.tier_level === 0) {
+        if (user.stripe_subscription_id) {
+          await stripe.subscriptions.cancel(user.stripe_subscription_id)
+        }
+
+        await supabase
+          .from('users')
+          .update({
+            subscription_status: 'inactive',
+            subscription_plan: billingCycle,
+            stripe_subscription_id: null,
+            subscription_period_end: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('uid', userId)
+
+        return { success: true }
+      }
+
+      const priceId = billingCycle === 'yearly' 
+        ? newPlan.stripe_price_id_yearly 
+        : newPlan.stripe_price_id_monthly
+
+      if (!priceId) throw new Error('Price ID not configured for plan')
+
+      let subscription: Stripe.Subscription
+
+      if (user.stripe_subscription_id) {
+        // Update existing subscription
+        subscription = await stripe.subscriptions.update(user.stripe_subscription_id, {
+          items: [{
+            price: priceId
+          }],
+          proration_behavior: 'create_prorations'
+        })
+      } else {
+        // Create new subscription
+        if (!user.stripe_customer_id) throw new Error('No Stripe customer ID')
+
+        subscription = await stripe.subscriptions.create({
+          customer: user.stripe_customer_id,
+          items: [{ price: priceId }],
+          payment_behavior: 'default_incomplete',
+          payment_settings: { save_default_payment_method: 'on_subscription' },
+          expand: ['latest_invoice.payment_intent']
+        })
+      }
+
+      // Update database
+      await supabase
+        .from('users')
+        .update({
+          subscription_status: 'active',
+          subscription_plan: billingCycle,
+          stripe_subscription_id: subscription.id,
+          subscription_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          subscription_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('uid', userId)
+
+      return { success: true, subscription }
+
+    } catch (error) {
+      console.error('Error changing subscription:', error)
+      return { success: false }
+    }
+  }
+
+  /**
+   * Check and enforce usage limits for a user
+   */
+  async checkUsageLimits(userId: string, action: string): Promise<{
+    allowed: boolean
+    limits: UsageLimits
+    upgrade_required?: boolean
+  }> {
+    // Get user's current subscription and usage
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        subscription_status,
+        subscription_plan,
+        subscription_plans:subscription_plans!users_subscription_plan_fkey(*)
+      `)
+      .eq('uid', userId)
+      .single()
+
+    if (!user) throw new Error('User not found')
+
+    // Get current month's usage
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { data: redemptions } = await supabase
+      .from('redemptions')
+      .select('*')
+      .eq('user_uid', userId)
+      .gte('created_at', startOfMonth.toISOString())
+
+    const redemptionsUsed = redemptions?.length || 0
+    const plan = user.subscription_plans as unknown as SubscriptionPlan
+
+    const limits: UsageLimits = {
+      redemptions_used: redemptionsUsed,
+      redemptions_remaining: Math.max(0, (plan?.max_redemptions_per_month || 0) - redemptionsUsed),
+      location_radius: plan?.max_location_radius || 5,
+      premium_access: plan?.exclusive_coupons_access || false,
+      early_access_hours: plan?.early_access_hours || 0,
+      analytics_access: plan?.analytics_access || false
+    }
+
+    let allowed = true
+    let upgradeRequired = false
+
+    // Check specific action limits
+    switch (action) {
+      case 'redeem_coupon':
+        if (plan?.max_redemptions_per_month > 0 && redemptionsUsed >= plan.max_redemptions_per_month) {
+          allowed = false
+          upgradeRequired = true
+        }
+        break
+      case 'view_premium_coupon':
+        if (!plan?.exclusive_coupons_access) {
+          allowed = false
+          upgradeRequired = true
+        }
+        break
+      case 'access_analytics':
+        if (!plan?.analytics_access) {
+          allowed = false
+          upgradeRequired = true
+        }
+        break
+    }
+
+    return { allowed, limits, upgrade_required: upgradeRequired }
+  }
+}
+
+// =====================================================
+// COMMISSION AND REVENUE SERVICE
+// =====================================================
+
+export class RevenueService {
+  /**
+   * Calculate dynamic commission rate for a business
+   */
+  async calculateCommission(businessId: string, monthlyVolume?: number): Promise<CommissionCalculation> {
+    const { data } = await supabase.rpc('calculate_dynamic_commission', {
+      p_business_uid: businessId,
+      p_monthly_volume: monthlyVolume
+    })
+
+    const baseRate = data || 0.15 // default 15%
+
+    // Get business performance metrics for bonuses
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('avg_rating, total_redemptions')
+      .eq('uid', businessId)
+      .single()
+
+    let performanceBonus = 0
+    if (business?.avg_rating >= 4.5) performanceBonus += 0.005 // 0.5% bonus
+    
+    const volumeDiscount = Math.max(0, baseRate - data)
+    const finalRate = data + performanceBonus
+
+    return {
+      base_rate: baseRate,
+      volume_discount: volumeDiscount,
+      performance_bonus: performanceBonus,
+      final_rate: finalRate,
+      estimated_monthly_commission: (monthlyVolume || 0) * 45 * finalRate // assuming $45 avg transaction
+    }
+  }
+
+  /**
+   * Record a revenue transaction
+   */
+  async recordTransaction(params: {
+    type: RevenueTransaction['transaction_type']
+    businessId?: string
+    userId?: string
+    couponId?: string
+    redemptionId?: string
+    grossAmount: number
+    stripePaymentIntentId?: string
+    description?: string
+    metadata?: Record<string, any>
+  }): Promise<string> {
+    const { data } = await supabase.rpc('record_revenue_transaction', {
+      p_transaction_type: params.type,
+      p_business_uid: params.businessId,
+      p_user_uid: params.userId,
+      p_coupon_uid: params.couponId,
+      p_redemption_uid: params.redemptionId,
+      p_gross_amount: params.grossAmount,
+      p_metadata: params.metadata || {}
+    })
+
+    return data // returns transaction UUID
+  }
+
+  /**
+   * Get revenue analytics for a business
+   */
+  async getBusinessRevenue(businessId: string, period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
+    const intervals = {
+      week: '7 days',
+      month: '30 days',
+      quarter: '90 days',
+      year: '365 days'
+    }
+
+    const { data, error } = await supabase
+      .from('revenue_transactions')
+      .select(`
+        transaction_type,
+        gross_amount,
+        net_amount,
+        commission_amount,
+        processed_at
+      `)
+      .eq('business_uid', businessId)
+      .eq('status', 'completed')
+      .gte('processed_at', new Date(Date.now() - (parseInt(intervals[period]) * 24 * 60 * 60 * 1000)).toISOString())
+
+    if (error) throw error
+
+    // Aggregate the data
+    const summary = {
+      total_transactions: data?.length || 0,
+      gross_revenue: data?.reduce((sum, t) => sum + t.gross_amount, 0) || 0,
+      net_revenue: data?.reduce((sum, t) => sum + t.net_amount, 0) || 0,
+      commission_paid: data?.reduce((sum, t) => sum + t.commission_amount, 0) || 0,
+      by_type: {} as Record<string, { count: number; revenue: number }>
+    }
+
+    data?.forEach(transaction => {
+      if (!summary.by_type[transaction.transaction_type]) {
+        summary.by_type[transaction.transaction_type] = { count: 0, revenue: 0 }
+      }
+      summary.by_type[transaction.transaction_type].count++
+      summary.by_type[transaction.transaction_type].revenue += transaction.net_amount
+    })
+
+    return summary
+  }
+
+  /**
+   * Process merchant payout
+   */
+  async processMerchantPayout(businessId: string, amount: number): Promise<{
+    success: boolean
+    payout_id?: string
+    net_amount?: number
+    commission?: number
+  }> {
+    try {
+      // Get business Stripe account and commission rate
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('stripe_account_id, name')
+        .eq('uid', businessId)
+        .single()
+
+      if (!business?.stripe_account_id) {
+        throw new Error('Business does not have connected Stripe account')
+      }
+
+      // Calculate commission and fees
+      const commission = await this.calculateCommission(businessId)
+      const commissionAmount = amount * commission.final_rate
+      const processingFee = amount * 0.029 + 0.30 // Stripe processing fee
+      const netAmount = amount - commissionAmount - processingFee
+
+      // Create Stripe transfer
+      const transfer = await stripe.transfers.create({
+        amount: Math.round(netAmount * 100), // Convert to cents
+        currency: 'usd',
+        destination: business.stripe_account_id,
+        description: `Saverly payout for ${business.name} - ${new Date().toLocaleDateString()}`
+      })
+
+      // Record the revenue transaction
+      await this.recordTransaction({
+        type: 'commission',
+        businessId: businessId,
+        grossAmount: amount,
+        description: `Merchant payout - Transfer ID: ${transfer.id}`,
+        metadata: {
+          transfer_id: transfer.id,
+          commission_rate: commission.final_rate,
+          processing_fee: processingFee
+        }
+      })
+
+      return {
+        success: true,
+        payout_id: transfer.id,
+        net_amount: netAmount,
+        commission: commissionAmount
+      }
+
+    } catch (error) {
+      console.error('Payout error:', error)
+      return { success: false }
+    }
+  }
+}
+
+// =====================================================
+// ADVERTISING REVENUE SERVICE
+// =====================================================
+
+export class AdvertisingService {
+  /**
+   * Get available advertising products
+   */
+  async getAdvertisingProducts() {
+    const { data, error } = await supabase
+      .from('advertising_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('name')
+
+    if (error) throw error
+    return data || []
+  }
+
+  /**
+   * Create advertising campaign
+   */
+  async createCampaign(params: {
+    business_uid: string
+    product_uid: string
+    name: string
+    description?: string
+    creative_url?: string
+    target_url?: string
+    start_date: string
+    end_date: string
+    daily_budget?: number
+    total_budget?: number
+    target_locations?: string[]
+    target_categories?: string[]
+  }) {
+    const { data, error } = await supabase
+      .from('advertising_campaigns')
+      .insert({
+        ...params,
+        target_locations: params.target_locations || [],
+        target_categories: params.target_categories || [],
+        status: 'draft'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  /**
+   * Track advertising performance
+   */
+  async trackImpression(campaignId: string) {
+    await supabase.rpc('increment_campaign_impressions', {
+      campaign_id: campaignId
+    })
+  }
+
+  async trackClick(campaignId: string) {
+    await supabase.rpc('increment_campaign_clicks', {
+      campaign_id: campaignId
+    })
+  }
+
+  async trackConversion(campaignId: string, conversionValue?: number) {
+    await supabase.rpc('increment_campaign_conversions', {
+      campaign_id: campaignId,
+      conversion_value: conversionValue
+    })
+  }
+}
+
+// =====================================================
+// EXPORT INSTANCES
+// =====================================================
+
+export const subscriptionManager = new SubscriptionManager()
+export const revenueService = new RevenueService()
+export const advertisingService = new AdvertisingService()
+
+// Default export for convenience
+export default {
+  subscriptionManager,
+  revenueService,
+  advertisingService,
+}

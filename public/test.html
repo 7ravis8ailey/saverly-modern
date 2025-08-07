@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direct Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 50px; text-align: center; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Saverly Debug Test</h1>
+  <div id="status">Testing...</div>
+  
+  <script type="module">
+    const status = document.getElementById('status');
+    
+    try {
+      // Test if we can load React
+      const response = await fetch('/node_modules/.vite/deps/react.js?v=fe40881e');
+      if (response.ok) {
+        status.innerHTML = '<p class="success">✅ React module loads correctly</p>';
+        
+        // Test if we can load the App
+        const appResponse = await fetch('/src/App.tsx');
+        if (appResponse.ok) {
+          status.innerHTML += '<p class="success">✅ App.tsx loads correctly</p>';
+          status.innerHTML += '<p>The app should be working. Check browser console for errors.</p>';
+        } else {
+          status.innerHTML += '<p class="error">❌ App.tsx failed to load</p>';
+        }
+      } else {
+        status.innerHTML = '<p class="error">❌ React module failed to load</p>';
+      }
+    } catch (error) {
+      status.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "default": [
+    {
+      "key": "migration_goal",
+      "value": "Complete migration of working Saverly app from Replit to modern local development with Supabase backend",
+      "namespace": "default",
+      "timestamp": 1753726918196
+    },
+    {
+      "key": "replit_source",
+      "value": "/Users/travisbailey/Downloads/SaverlyMarketplace - Complete working app with Express backend, admin dashboard, QR codes, Stripe integration",
+      "namespace": "default",
+      "timestamp": 1753726918338
+    },
+    {
+      "key": "api_keys_source",
+      "value": "/Users/travisbailey/Claude Workspace/Saverly/.env - Contains Google Maps and Stripe API keys to use",
+      "namespace": "default",
+      "timestamp": 1753726918479
+    },
+    {
+      "key": "target_stack",
+      "value": "React + TypeScript + Vite + Supabase (replace Express) with complete local development setup. GitHub/Netlify deployment only after local testing is complete",
+      "namespace": "default",
+      "timestamp": 1753726918623
+    },
+    {
+      "key": "preserve_all",
+      "value": "MUST preserve ALL functionality: QR codes, Stripe payments, admin dashboard, authentication, business management, Google Maps",
+      "namespace": "default",
+      "timestamp": 1753726918765
+    },
+    {
+      "key": "deployment_strategy",
+      "value": "PRIMARY FOCUS: Complete local development environment that works perfectly. Only push to GitHub and deploy to Netlify AFTER all functionality is tested and working locally",
+      "namespace": "default",
+      "timestamp": 1753726918907
+    },
+    {
+      "key": "visual_preservation",
+      "value": "CRITICAL: Preserve EXACT visual appearance, layouts, colors, fonts, spacing, and user interface from Replit version. Users should see zero visual differences.",
+      "namespace": "default",
+      "timestamp": 1753727013083
+    },
+    {
+      "key": "swarm/objective",
+      "value": "Complete Supabase CLI and MCP integration for Saverly web app",
+      "namespace": "default",
+      "timestamp": 1754524900063
+    },
+    {
+      "key": "swarm/config",
+      "value": "{\"strategy\": \"development\", \"mode\": \"hierarchical\", \"maxAgents\": 5}",
+      "namespace": "default",
+      "timestamp": 1754524901058
+    },
+    {
+      "key": "project/info",
+      "value": "{\"name\": \"Saverly Modern\", \"version\": \"2.0.0\", \"tech\": \"React 19 + TypeScript + Vite + Supabase\"}",
+      "namespace": "default",
+      "timestamp": 1754524902075
+    }
+  ]
+}

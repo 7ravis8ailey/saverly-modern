@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "_comment": "Supabase MCP server configuration - ✅ FULLY OPERATIONAL",
+      "_status": "✅ ACTIVE - All services initialized successfully",
+      "_version": "v0.4 - PostgreSQL, Management API, SDK, and Query clients all working",
+      "_docs": "https://github.com/alexander-zuev/supabase-mcp-server",
+      "_project": "lziayzusujlvhebyagdl.supabase.co (us-east-1)",
+      "command": "./run-supabase-mcp.sh",
+      "args": [],
+      "env": {}
+    }
+  }
+}

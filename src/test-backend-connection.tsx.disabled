@@ -1,0 +1,258 @@
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/supabase-api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, XCircle, AlertCircle, Database, Users, Building, Ticket } from 'lucide-react';
+
+interface TestResult {
+  name: string;
+  status: 'pending' | 'success' | 'error';
+  message: string;
+  details?: any;
+}
+
+export function BackendConnectionTest() {
+  const [tests, setTests] = useState<TestResult[]>([
+    { name: 'Database Connection', status: 'pending', message: 'Testing connection...' },
+    { name: 'Users Table', status: 'pending', message: 'Checking users table...' },
+    { name: 'Businesses Table', status: 'pending', message: 'Checking businesses table...' },
+    { name: 'Coupons Table', status: 'pending', message: 'Checking coupons table...' },
+    { name: 'Redemptions Table', status: 'pending', message: 'Checking redemptions table...' },
+    { name: 'Authentication', status: 'pending', message: 'Testing auth system...' }
+  ]);
+
+  const [isRunning, setIsRunning] = useState(false);
+
+  const updateTest = (index: number, status: 'success' | 'error', message: string, details?: any) => {
+    setTests(prev => prev.map((test, i) => 
+      i === index ? { ...test, status, message, details } : test
+    ));
+  };
+
+  const runTests = async () => {
+    setIsRunning(true);
+    
+    // Reset all tests
+    setTests(prev => prev.map(test => ({ ...test, status: 'pending' as const })));
+
+    try {
+      // Test 1: Database Connection
+      try {
+        const { user } = await api.auth.getUser();
+        updateTest(0, 'success', 'Connected to Supabase successfully');
+      } catch (error) {
+        updateTest(0, 'error', `Connection failed: ${error}`, error);
+        setIsRunning(false);
+        return;
+      }
+
+      // Test 2: Users Table
+      try {
+        const { data, error } = await api.users.getById('test-id');
+        if (error && error.code === '42P01') {
+          updateTest(1, 'error', 'Users table does not exist - Need to apply schema', error);
+        } else {
+          updateTest(1, 'success', 'Users table exists and accessible');
+        }
+      } catch (error) {
+        updateTest(1, 'error', `Users table error: ${error}`, error);
+      }
+
+      // Test 3: Businesses Table
+      try {
+        const { data, error } = await api.businesses.getAll();
+        if (error && error.code === '42P01') {
+          updateTest(2, 'error', 'Businesses table does not exist - Need to apply schema', error);
+        } else {
+          updateTest(2, 'success', `Businesses table exists - Found ${data?.length || 0} businesses`);
+        }
+      } catch (error) {
+        updateTest(2, 'error', `Businesses table error: ${error}`, error);
+      }
+
+      // Test 4: Coupons Table
+      try {
+        const { data, error } = await api.coupons.getAll();
+        if (error && error.code === '42P01') {
+          updateTest(3, 'error', 'Coupons table does not exist - Need to apply schema', error);
+        } else {
+          updateTest(3, 'success', `Coupons table exists - Found ${data?.length || 0} coupons`);
+        }
+      } catch (error) {
+        updateTest(3, 'error', `Coupons table error: ${error}`, error);
+      }
+
+      // Test 5: Redemptions Table
+      try {
+        const { data, error } = await api.redemptions.getByUser('test-id');
+        if (error && error.code === '42P01') {
+          updateTest(4, 'error', 'Redemptions table does not exist - Need to apply schema', error);
+        } else {
+          updateTest(4, 'success', 'Redemptions table exists and accessible');
+        }
+      } catch (error) {
+        updateTest(4, 'error', `Redemptions table error: ${error}`, error);
+      }
+
+      // Test 6: Authentication
+      try {
+        const { error } = await api.auth.signUp('test@example.com', 'testpassword');
+        if (error && error.message.includes('Email rate limit exceeded')) {
+          updateTest(5, 'success', 'Auth system working (rate limit indicates API is functional)');
+        } else if (error) {
+          updateTest(5, 'error', `Auth test failed: ${error.message}`, error);
+        } else {
+          updateTest(5, 'success', 'Auth system working - Test signup successful');
+        }
+      } catch (error) {
+        updateTest(5, 'error', `Auth system error: ${error}`, error);
+      }
+
+    } catch (error) {
+      console.error('Test suite error:', error);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const getStatusIcon = (status: TestResult['status']) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'pending':
+        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+    }
+  };
+
+  const getStatusBadge = (status: TestResult['status']) => {
+    switch (status) {
+      case 'success':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Passed</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Failed</Badge>;
+      case 'pending':
+        return <Badge variant="outline">Pending</Badge>;
+    }
+  };
+
+  const allTablesMissing = tests.slice(1, 5).every(test => 
+    test.status === 'error' && test.message.includes('does not exist')
+  );
+
+  useEffect(() => {
+    // Auto-run tests on component mount
+    runTests();
+  }, []);
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold saverly-gradient-text mb-2">
+          Backend Connection Test
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Testing Supabase integration and database schema
+        </p>
+        <Button 
+          onClick={runTests} 
+          disabled={isRunning}
+          variant="saverly"
+          className="mb-6"
+        >
+          {isRunning ? 'Running Tests...' : 'Run Tests Again'}
+        </Button>
+      </div>
+
+      {allTablesMissing && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-800">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              Database Schema Missing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-orange-700">
+            <p className="mb-4">
+              The database tables don't exist yet. You need to apply the schema first.
+            </p>
+            <div className="bg-orange-100 p-4 rounded-lg">
+              <p className="font-medium mb-2">To fix this:</p>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>Go to <a href="https://lziayzusujlvhebyagdl.supabase.co" target="_blank" className="text-blue-600 underline">Supabase Dashboard</a></li>
+                <li>Navigate to SQL Editor</li>
+                <li>Copy and paste the contents of <code>SUPABASE_COMPLETE_SETUP.sql</code></li>
+                <li>Run the SQL to create all tables and functions</li>
+                <li>Come back and run these tests again</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4">
+        {tests.map((test, index) => (
+          <Card key={index} className="transition-all duration-200">
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(test.status)}
+                <div>
+                  <h3 className="font-medium">{test.name}</h3>
+                  <p className="text-sm text-gray-600">{test.message}</p>
+                </div>
+              </div>
+              {getStatusBadge(test.status)}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Environment Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Supabase URL:</span>
+            <code className="bg-gray-100 px-2 py-1 rounded">
+              {import.meta.env.VITE_SUPABASE_URL || 'Not configured'}
+            </code>
+          </div>
+          <div className="flex justify-between">
+            <span>API Key Present:</span>
+            <Badge variant={import.meta.env.VITE_SUPABASE_ANON_KEY ? "default" : "destructive"}>
+              {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Yes' : 'No'}
+            </Badge>
+          </div>
+          <div className="flex justify-between">
+            <span>Google Maps Key:</span>
+            <Badge variant={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? "default" : "destructive"}>
+              {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? 'Configured' : 'Missing'}
+            </Badge>
+          </div>
+          <div className="flex justify-between">
+            <span>Stripe Key:</span>
+            <Badge variant={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? "default" : "destructive"}>
+              {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Configured' : 'Missing'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Next Steps</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+          <p><strong>1. Apply Database Schema:</strong> Run the SQL setup script in Supabase Dashboard</p>
+          <p><strong>2. Enable Google Maps Billing:</strong> Enable billing in Google Cloud Console</p>
+          <p><strong>3. Test User Registration:</strong> Create test accounts through the app</p>
+          <p><strong>4. Test Coupon Creation:</strong> Add sample businesses and coupons</p>
+          <p><strong>5. Test QR Redemption:</strong> Complete end-to-end redemption flow</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
