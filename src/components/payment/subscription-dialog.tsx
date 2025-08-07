@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Loader2, UserX } from 'lucide-react'
+import { supabase } from '@/lib/supabase-api'
 
 interface SubscriptionDialogProps {
   isOpen: boolean
@@ -31,32 +32,28 @@ export function SubscriptionDialog({ isOpen, onClose, onSuccess }: SubscriptionD
 
     setLoading(true)
     try {
-      // In a real app, this would be a server-side API call
-      // For now, we'll simulate creating a payment intent
-      // You would need to implement a Supabase Edge Function for this
-      
-      // Don't set a mock client secret - show a message instead
-      // const mockClientSecret = 'pi_mock_client_secret'
-      // setClientSecret(mockClientSecret)
-      setClientSecret(null)
-      
-      // TODO: Replace with actual Supabase Edge Function call:
-      /*
+      // Call our Supabase Edge Function to create payment intent
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         body: {
-          amount: 499, // $4.99 in cents
-          currency: 'usd',
-          customer_email: user.email,
-          user_id: user.uid
+          priceId: 'price_1OKHr2SID4oe5irqZGKQXYmI', // Replace with your actual Stripe price ID
+          email: user.email
         }
       })
       
-      if (error) throw error
-      setClientSecret(data.client_secret)
-      */
+      if (error) {
+        console.error('Edge function error:', error)
+        throw error
+      }
+      
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret)
+      } else {
+        throw new Error('No client secret returned from payment intent')
+      }
       
     } catch (error) {
       console.error('Failed to create payment intent:', error)
+      setClientSecret(null)
     } finally {
       setLoading(false)
     }

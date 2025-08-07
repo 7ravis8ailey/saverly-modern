@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthProvider } from './use-auth';
-import { api } from '@/lib/supabase-api';
+import { supabase } from '@/lib/supabase-api';
 
 export interface SubscriptionStatus {
   isActive: boolean;
@@ -64,7 +64,7 @@ export function useSubscriptionStatus() {
   useEffect(() => {
     if (!user) return;
 
-    const channel = api.supabase
+    const channel = supabase
       .channel('subscription-updates')
       .on(
         'postgres_changes',
@@ -85,7 +85,7 @@ export function useSubscriptionStatus() {
       .subscribe();
 
     return () => {
-      api.supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [user]);
 

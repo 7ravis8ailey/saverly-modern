@@ -34,3 +34,6 @@ test-api-key-function.js
 *.njsproj
 *.sln
 *.sw?
+
+# Local Netlify folder
+.netlify

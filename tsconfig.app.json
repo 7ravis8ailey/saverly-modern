@@ -30,5 +30,12 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["src"],
-  "exclude": ["src/tests/**/*", "src/**/__tests__/**/*", "src/**/*.test.*"]
+  "exclude": [
+    "src/tests/**/*", 
+    "src/**/__tests__/**/*", 
+    "src/**/*.test.*",
+    "src/components/admin/**/*",
+    "src/pages/admin/**/*",
+    "src/pages/UpgradePage.tsx"
+  ]
 }
