@@ -20,9 +20,29 @@ dist-ssr
 .env.production.local
 .env.*.local
 
-# Security sensitive files
+# SECURITY: Files containing API keys/secrets - NEVER COMMIT
+*.mjs
+*.py
+test-*.js
+create-*.js
+apply-*.js
+setup-*.js
+fix-*.js
+debug-*.js
+verify-*.js
+run-*.js
+check-*.js
+update-*.js
+validate-*.js
+integration-*.js
+security-*.js
+STRIPE_WEBHOOK_INTEGRATION.js
+scripts/
 test-google-maps.html
 test-api-key-function.js
+
+# Supabase
+.supabase/
 
 # Editor directories and files
 .vscode/*
