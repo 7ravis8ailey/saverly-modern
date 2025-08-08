@@ -1,0 +1,11 @@
+# Netlify SPA routing configuration for Saverly Modern
+# This ensures all routes are handled by the React app
+
+# Handle all routes through React app for client-side routing
+/*    /index.html   200
+
+# Optional: Handle API calls differently if needed
+/api/*  /api/:splat  200
+
+# Optional: Handle static assets
+/assets/*  /assets/:splat  200

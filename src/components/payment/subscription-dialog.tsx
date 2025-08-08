@@ -35,7 +35,7 @@ export function SubscriptionDialog({ isOpen, onClose, onSuccess }: SubscriptionD
       // Call our Supabase Edge Function to create payment intent
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         body: {
-          priceId: 'price_1OKHr2SID4oe5irqZGKQXYmI', // Replace with your actual Stripe price ID
+          priceId: 'price_1QikZq02ghiSs4BURNiyD53v', // Saverly Monthly Subscription - $4.99/month
           email: user.email
         }
       })

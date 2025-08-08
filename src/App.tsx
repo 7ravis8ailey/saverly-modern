@@ -11,6 +11,11 @@ import SubscriptionMarketingPage from './pages/SubscriptionMarketingPage'
 import CouponsPage from './pages/CouponsPage'
 import SimpleTestPage from './pages/simple-test'
 // import TestPage from './pages/test' // Disabled for launch
+import AdminDashboard from './pages/admin/dashboard'
+import AdminUsers from './pages/admin/users'
+import AdminUserDetail from './pages/admin/user-detail'
+import AdminBusinesses from './pages/admin/businesses'
+import AdminRedemptions from './pages/admin/redemptions'
 import { ErrorBoundary } from './components/error-boundary'
 import { Toaster } from './components/ui/toaster'
 
@@ -38,6 +43,13 @@ function AppContent() {
           {/* Subscription routes */}
           <Route path="/upgrade" element={<SubscriptionMarketingPage />} />
           <Route path="/subscription" element={<SubscriptionMarketingPage />} />
+          
+          {/* Admin routes - protected */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/users/:userId" element={<AdminUserDetail />} />
+          <Route path="/admin/businesses" element={<AdminBusinesses />} />
+          <Route path="/admin/redemptions" element={<AdminRedemptions />} />
           
           {/* Development/testing routes */}
           <Route path="/simple" element={<SimpleTestPage />} />
