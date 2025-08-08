@@ -2,11 +2,11 @@ import { beforeAll, afterAll, vi } from 'vitest'
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 
-// Mock environment variables for testing
-process.env.VITE_SUPABASE_URL = 'https://lziayzusujlvhebyagdl.supabase.co'
-process.env.VITE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6aWF5enVzdWpsdmhlYnlhZ2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMzNDA4MzEsImV4cCI6MjA0ODkxNjgzMX0.kEmNhVqqFr7_TCQC6zlF1GqCIBHI8YIJtAC_WRMfOKs'
-process.env.VITE_GOOGLE_MAPS_API_KEY = 'test-google-maps-key'
-process.env.VITE_STRIPE_PUBLISHABLE_KEY = 'pk_test_stripe_key'
+// Load test environment variables (fallback to mock values if not set)
+process.env.VITE_SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://mock-supabase-url.supabase.co'
+process.env.VITE_SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'mock-supabase-anon-key'
+process.env.VITE_GOOGLE_MAPS_API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY || 'mock-google-maps-key'
+process.env.VITE_STRIPE_PUBLISHABLE_KEY = process.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_mock_stripe_key'
 
 // Mock Google Maps API
 Object.defineProperty(window, 'google', {

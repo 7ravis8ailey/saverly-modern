@@ -378,7 +378,7 @@ function WelcomePage() {
 
 // Main HomePage Component with Dual Views
 export function HomePage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [searchParams] = useSearchParams()
 
   // Show loading state while user data is being fetched
@@ -391,6 +391,18 @@ export function HomePage() {
         </div>
       </div>
     )
+  }
+
+  // Check if user is admin - redirect to admin dashboard
+  const isAdmin = profile?.user_role === 'admin' ||
+                 profile?.is_admin === true ||
+                 profile?.email?.includes('admin') || 
+                 user.email === 'admin@test.saverly' ||
+                 user.email?.includes('admin')
+  
+  if (isAdmin) {
+    window.location.href = '/admin'
+    return null
   }
 
   // Check if we should force showing the welcome page (for new registrations)

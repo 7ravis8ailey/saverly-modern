@@ -33,11 +33,18 @@ export default function ProfileIcon({
   showLabel = false, 
   variant = 'default' 
 }: ProfileIconProps) {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { subscriptionStatus } = useSubscriptionStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = profile?.user_role === 'admin' ||
+                 profile?.is_admin === true ||
+                 profile?.email?.includes('admin') || 
+                 user?.email === 'admin@test.saverly' ||
+                 user?.email?.includes('admin');
 
   if (!user) {
     return null;
@@ -159,7 +166,13 @@ export default function ProfileIcon({
                 <p className="text-sm font-medium truncate">
                   {getUserDisplayName()}
                 </p>
-                {subscriptionStatus.isActive && (
+                {isAdmin && (
+                  <Badge className="text-xs bg-gradient-to-r from-purple-400 to-blue-500 text-white">
+                    <Crown className="w-2.5 h-2.5 mr-1" />
+                    Admin
+                  </Badge>
+                )}
+                {!isAdmin && subscriptionStatus.isActive && (
                   <Badge className="text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
                     <Crown className="w-2.5 h-2.5 mr-1" />
                     Pro
@@ -183,59 +196,69 @@ export default function ProfileIcon({
             </Link>
           </DropdownMenuItem>
 
-          {subscriptionStatus.isActive ? (
-            <DropdownMenuItem asChild>
-              <Link to="/account/billing" className="cursor-pointer">
-                <CreditCard className="mr-3 h-4 w-4" />
-                <div>
-                  <div className="text-sm">Manage Subscription</div>
-                  <div className="text-xs text-gray-500">Billing & payments</div>
-                </div>
-              </Link>
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem asChild>
-              <Link to="/upgrade" className="cursor-pointer">
-                <Crown className="mr-3 h-4 w-4 text-yellow-500" />
-                <div>
-                  <div className="text-sm">Upgrade to Premium</div>
-                  <div className="text-xs text-gray-500">$4.99/month</div>
-                </div>
-              </Link>
-            </DropdownMenuItem>
+          {!isAdmin && (
+            <>
+              {subscriptionStatus.isActive ? (
+                <DropdownMenuItem asChild>
+                  <Link to="/account/billing" className="cursor-pointer">
+                    <CreditCard className="mr-3 h-4 w-4" />
+                    <div>
+                      <div className="text-sm">Manage Subscription</div>
+                      <div className="text-xs text-gray-500">Billing & payments</div>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link to="/upgrade" className="cursor-pointer">
+                    <Crown className="mr-3 h-4 w-4 text-yellow-500" />
+                    <div>
+                      <div className="text-sm">Upgrade to Premium</div>
+                      <div className="text-xs text-gray-500">$4.99/month</div>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="cursor-pointer">
+                  <Settings className="mr-3 h-4 w-4" />
+                  <div>
+                    <div className="text-sm">Settings</div>
+                    <div className="text-xs text-gray-500">Preferences & privacy</div>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link to="/notifications" className="cursor-pointer">
+                  <Bell className="mr-3 h-4 w-4" />
+                  <div>
+                    <div className="text-sm">Notifications</div>
+                    <div className="text-xs text-gray-500">Manage alerts</div>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </>
           )}
-
-          <DropdownMenuItem asChild>
-            <Link to="/settings" className="cursor-pointer">
-              <Settings className="mr-3 h-4 w-4" />
-              <div>
-                <div className="text-sm">Settings</div>
-                <div className="text-xs text-gray-500">Preferences & privacy</div>
-              </div>
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Link to="/notifications" className="cursor-pointer">
-              <Bell className="mr-3 h-4 w-4" />
-              <div>
-                <div className="text-sm">Notifications</div>
-                <div className="text-xs text-gray-500">Manage alerts</div>
-              </div>
-            </Link>
-          </DropdownMenuItem>
         </div>
 
+        {!isAdmin && <DropdownMenuSeparator />}
+
+        {!isAdmin && (
+          <div className="py-1">
+            <DropdownMenuItem asChild>
+              <Link to="/help" className="cursor-pointer">
+                <HelpCircle className="mr-3 h-4 w-4" />
+                <span className="text-sm">Help & Support</span>
+              </Link>
+            </DropdownMenuItem>
+          </div>
+        )}
+
         <DropdownMenuSeparator />
-
+        
         <div className="py-1">
-          <DropdownMenuItem asChild>
-            <Link to="/help" className="cursor-pointer">
-              <HelpCircle className="mr-3 h-4 w-4" />
-              <span className="text-sm">Help & Support</span>
-            </Link>
-          </DropdownMenuItem>
-
           <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
             <LogOut className="mr-3 h-4 w-4" />
             <span className="text-sm">Sign Out</span>

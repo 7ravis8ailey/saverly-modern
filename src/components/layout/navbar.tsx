@@ -72,10 +72,14 @@ export function Navbar() {
       ]
     }
 
-    const baseLinks = [
-      { to: '/dashboard', label: 'Dashboard', ariaLabel: 'Go to dashboard' },
-      { to: '/coupons', label: 'Browse Coupons', icon: Ticket, ariaLabel: 'Browse available coupons' }
-    ]
+    const baseLinks = []
+    
+    // Only show Dashboard link if not currently on dashboard page
+    if (location.pathname !== '/dashboard') {
+      baseLinks.push({ to: '/dashboard', label: 'Dashboard', ariaLabel: 'Go to dashboard' })
+    }
+    
+    baseLinks.push({ to: '/coupons', label: 'Browse Coupons', icon: Ticket, ariaLabel: 'Browse available coupons' })
 
     if (user.accountType === 'admin') {
       baseLinks.push({ to: '/admin', label: 'Admin', icon: Settings, ariaLabel: 'Access admin panel' })
@@ -102,7 +106,7 @@ export function Navbar() {
             
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-4">
-              {navigationLinks.slice(0, -1).map((link) => {
+              {navigationLinks.map((link) => {
                 const Icon = 'icon' in link ? link.icon : null
                 const isActive = location.pathname === link.to
                 
