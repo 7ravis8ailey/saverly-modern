@@ -38,6 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUser: auth.updateProfile
   };
   
+  // CRITICAL FIX: Always render children - don't block on loading
+  // The individual components can handle their own loading states
   return (
     <AuthContext.Provider value={contextValue}>
       {children}

@@ -20,8 +20,11 @@ export function useAuthProvider() {
   // Initialize auth state with race condition protection
   const initializeAuth = useCallback(async () => {
     console.log('🚀 Auth initialization starting...', { initialized, loading });
-    if (initialized) {
-      console.log('🚀 Already initialized, skipping');
+    
+    // CRITICAL FIX: Don't skip if already initialized but loading is still true
+    // This can happen after rehydration when state is inconsistent
+    if (initialized && !loading) {
+      console.log('🚀 Already initialized and not loading, skipping');
       return;
     }
     

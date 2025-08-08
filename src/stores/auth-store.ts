@@ -92,6 +92,13 @@ export const useAuthStore = create<AuthState>()(
           initialized: state?.initialized,
           loading: state?.loading
         });
+        
+        // CRITICAL FIX: Reset loading state after rehydration
+        // This ensures the AuthProvider can render its children
+        if (state) {
+          console.log('💾 Auth Store: Resetting loading state after rehydration');
+          state.loading = false;
+        }
       }
     }
   )
