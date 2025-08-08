@@ -252,7 +252,7 @@ export function RegisterForm({ onToggleMode }: RegisterFormProps) {
       // Redirect to non-subscriber dashboard view after successful registration
       // This ensures users see the basic dashboard without being forced into subscription flow
       setTimeout(() => {
-        navigate('/dashboard?subscriber=false')
+        navigate('/')
       }, 1000) // Give user time to read the success message
     }
   }

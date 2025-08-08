@@ -120,8 +120,8 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
         variant: "success"
       })
       
-      // Redirect to a router component that will handle proper routing
-      navigate('/router')
+      // Redirect to landing page which will handle routing based on user type
+      navigate('/')
     }
   }
 
