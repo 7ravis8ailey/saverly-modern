@@ -52,20 +52,19 @@ export default function AdminUsers() {
 
     const matchesFilter = filterType === 'all' ||
       (filterType === 'active' && user.subscription_status === 'active') ||
-      (filterType === 'inactive' && user.subscription_status === 'inactive') ||
-      (filterType === 'admin' && user.account_type === 'admin');
+      (filterType === 'inactive' && (user.subscription_status === 'free' || user.subscription_status === 'cancelled')) ||
+      (filterType === 'admin' && (user.user_role === 'admin' || user.is_admin === true));
 
     return matchesSearch && matchesFilter;
   });
 
-  const getAccountTypeIcon = (type: string) => {
-    switch (type) {
-      case 'admin':
-        return <Crown className="w-4 h-4 text-yellow-600" />;
-      case 'business':
-        return <Building2 className="w-4 h-4 text-purple-600" />;
-      default:
-        return <User className="w-4 h-4 text-blue-600" />;
+  const getAccountTypeIcon = (user: any) => {
+    if (user.user_role === 'admin' || user.is_admin) {
+      return <Crown className="w-4 h-4 text-yellow-600" />;
+    } else if (user.user_role === 'business') {
+      return <Building2 className="w-4 h-4 text-purple-600" />;
+    } else {
+      return <User className="w-4 h-4 text-blue-600" />;
     }
   };
 
@@ -192,12 +191,12 @@ export default function AdminUsers() {
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow 
-                      key={user.uid} 
+                      key={user.id} 
                       className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => navigate(`/admin/users/${user.uid}`)}
+                      onClick={() => navigate(`/admin/users/${user.id}`)}
                     >
                       <TableCell>
-                        {getAccountTypeIcon(user.account_type)}
+                        {getAccountTypeIcon(user)}
                       </TableCell>
                       <TableCell>
                         <div>
@@ -216,9 +215,9 @@ export default function AdminUsers() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          {getAccountTypeIcon(user.account_type)}
+                          {getAccountTypeIcon(user)}
                           <span className="capitalize text-sm">
-                            {user.account_type}
+                            {user.user_role || 'consumer'}
                           </span>
                         </div>
                       </TableCell>
@@ -247,7 +246,7 @@ export default function AdminUsers() {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/admin/users/${user.uid}`);
+                            navigate(`/admin/users/${user.id}`);
                           }}
                         >
                           <Eye className="w-4 h-4" />
@@ -266,9 +265,9 @@ export default function AdminUsers() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {users.filter(u => u.account_type === 'subscriber').length}
+                {users.filter(u => u.user_role === 'consumer' || (!u.user_role && !u.is_admin)).length}
               </div>
-              <p className="text-sm text-gray-600">Subscribers</p>
+              <p className="text-sm text-gray-600">Consumers</p>
             </CardContent>
           </Card>
           <Card>
@@ -282,7 +281,7 @@ export default function AdminUsers() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {users.filter(u => u.account_type === 'business').length}
+                {users.filter(u => u.user_role === 'business').length}
               </div>
               <p className="text-sm text-gray-600">Business Accounts</p>
             </CardContent>
@@ -290,7 +289,7 @@ export default function AdminUsers() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-yellow-600">
-                {users.filter(u => u.account_type === 'admin').length}
+                {users.filter(u => u.user_role === 'admin' || u.is_admin === true).length}
               </div>
               <p className="text-sm text-gray-600">Admin Accounts</p>
             </CardContent>

@@ -10,20 +10,26 @@ export interface AdminStats {
 }
 
 export interface AdminUser {
-  uid: string;
-  auth_uid: string;
-  full_name: string | null;
+  id: string;
   email: string;
+  full_name: string | null;
   phone: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
   zip_code: string | null;
-  account_type: 'subscriber' | 'admin' | 'business';
-  subscription_status: 'active' | 'inactive' | 'cancelled' | 'past_due';
+  latitude: number | null;
+  longitude: number | null;
+  subscription_status: 'free' | 'active' | 'cancelled' | 'past_due' | 'unpaid' | 'trialing';
+  subscription_plan: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  subscription_period_start: string | null;
   subscription_period_end: string | null;
+  profile_image_url: string | null;
+  preferences: any;
+  is_admin: boolean;
+  user_role: 'consumer' | 'business' | 'admin' | 'super_admin' | null;
   created_at: string;
   updated_at: string;
 }
@@ -175,25 +181,25 @@ export const adminAPI = {
     return data || [];
   },
 
-  async getUserById(uid: string): Promise<AdminUser | null> {
+  async getUserById(id: string): Promise<AdminUser | null> {
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .eq('uid', uid)
+      .eq('id', id)
       .single();
 
     if (error) throw error;
     return data;
   },
 
-  async updateUser(uid: string, updates: Partial<AdminUser>): Promise<AdminUser> {
+  async updateUser(id: string, updates: Partial<AdminUser>): Promise<AdminUser> {
     const { data, error } = await supabase
       .from('users')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
       })
-      .eq('uid', uid)
+      .eq('id', id)
       .select()
       .single();
 

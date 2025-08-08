@@ -73,8 +73,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   // Check if user has admin privileges with multiple fallbacks
-  const isAdmin = profile?.account_type === 'admin' || 
-                  profile?.user_role === 'admin' ||
+  const isAdmin = profile?.user_role === 'admin' ||
                   profile?.is_admin === true ||
                   profile?.email?.includes('admin') || 
                   profile?.full_name?.toLowerCase().includes('admin') ||

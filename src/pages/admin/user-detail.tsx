@@ -76,7 +76,8 @@ export default function AdminUserDetail() {
       city: user?.city || '',
       state: user?.state || '',
       zip_code: user?.zip_code || '',
-      account_type: user?.account_type || 'subscriber',
+      user_role: user?.user_role || 'consumer',
+      is_admin: user?.is_admin || false,
       subscription_status: user?.subscription_status || 'inactive',
     });
     setIsEditing(true);
@@ -91,14 +92,13 @@ export default function AdminUserDetail() {
     setEditForm({});
   };
 
-  const getAccountTypeIcon = (type: string) => {
-    switch (type) {
-      case 'admin':
-        return <Crown className="w-5 h-5 text-yellow-600" />;
-      case 'business':
-        return <Building2 className="w-5 h-5 text-purple-600" />;
-      default:
-        return <User className="w-5 h-5 text-blue-600" />;
+  const getAccountTypeIcon = (user: any) => {
+    if (user?.user_role === 'admin' || user?.is_admin) {
+      return <Crown className="w-5 h-5 text-yellow-600" />;
+    } else if (user?.user_role === 'business') {
+      return <Building2 className="w-5 h-5 text-purple-600" />;
+    } else {
+      return <User className="w-5 h-5 text-blue-600" />;
     }
   };
 
@@ -157,7 +157,7 @@ export default function AdminUserDetail() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center space-x-3">
-              {getAccountTypeIcon(user.account_type)}
+              {getAccountTypeIcon(user)}
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
                   {user.full_name || 'Unnamed User'}
@@ -296,16 +296,16 @@ export default function AdminUserDetail() {
                 {isEditing ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="account_type">Account Type</Label>
+                      <Label htmlFor="user_role">User Role</Label>
                       <Select
-                        value={editForm.account_type}
-                        onValueChange={(value) => setEditForm({ ...editForm, account_type: value })}
+                        value={editForm.user_role}
+                        onValueChange={(value) => setEditForm({ ...editForm, user_role: value, is_admin: value === 'admin' })}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="subscriber">Subscriber</SelectItem>
+                          <SelectItem value="consumer">Consumer</SelectItem>
                           <SelectItem value="business">Business</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
@@ -332,10 +332,11 @@ export default function AdminUserDetail() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span>Account Type</span>
+                      <span>User Role</span>
                       <div className="flex items-center space-x-2">
-                        {getAccountTypeIcon(user.account_type)}
-                        <span className="capitalize">{user.account_type}</span>
+                        {getAccountTypeIcon(user)}
+                        <span className="capitalize">{user.user_role || 'consumer'}</span>
+                        {user.is_admin && <span className="text-yellow-600 ml-2">(Admin)</span>}
                       </div>
                     </div>
                     <Separator />
@@ -359,7 +360,7 @@ export default function AdminUserDetail() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">User ID</span>
-                  <span className="text-sm font-mono">{user.uid.slice(0, 8)}...</span>
+                  <span className="text-sm font-mono">{user.id.slice(0, 8)}...</span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between">
