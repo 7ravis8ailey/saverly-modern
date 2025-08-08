@@ -16,6 +16,7 @@ import AdminUsers from './pages/admin/users'
 import AdminUserDetail from './pages/admin/user-detail'
 import AdminBusinesses from './pages/admin/businesses'
 import AdminRedemptions from './pages/admin/redemptions'
+import { UserRouter } from './components/auth/user-router'
 import { ErrorBoundary } from './components/error-boundary'
 import { Toaster } from './components/ui/toaster'
 
@@ -30,6 +31,9 @@ function AppContent() {
           <Route path="/auth" element={<AuthForm />} />
           <Route path="/auth/login" element={<AuthForm />} />
           <Route path="/auth/register" element={<AuthForm />} />
+          
+          {/* User router - handles routing after login */}
+          <Route path="/router" element={<UserRouter />} />
           
           {/* Dashboard route - shows different views based on subscription status */}
           <Route path="/dashboard" element={<HomePage />} />

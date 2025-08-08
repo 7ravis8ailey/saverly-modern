@@ -120,9 +120,8 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
         variant: "success"
       })
       
-      // Redirect to dashboard - user will be redirected to admin if they are admin
-      // For regular users, this maintains their subscription status
-      navigate('/dashboard')
+      // Redirect to a router component that will handle proper routing
+      navigate('/router')
     }
   }
 

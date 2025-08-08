@@ -72,8 +72,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check if user has admin privileges (you may want to adjust this logic)
-  const isAdmin = profile?.email?.includes('admin') || 
+  // Check if user has admin privileges with multiple fallbacks
+  const isAdmin = profile?.account_type === 'admin' || 
+                  profile?.user_role === 'admin' ||
+                  profile?.is_admin === true ||
+                  profile?.email?.includes('admin') || 
                   profile?.full_name?.toLowerCase().includes('admin') ||
                   user.email === 'admin@test.saverly';
 
