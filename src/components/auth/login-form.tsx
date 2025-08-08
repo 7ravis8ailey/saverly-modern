@@ -12,8 +12,15 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onToggleMode }: LoginFormProps) {
+  console.log('🔐 LoginForm rendering...');
   const navigate = useNavigate()
   const { signIn, loading, user, profile } = useAuth()
+  
+  console.log('🔐 LoginForm auth state:', { 
+    loading, 
+    hasUser: !!user, 
+    hasProfile: !!profile 
+  });
   const [formData, setFormData] = useState({
     email: '',
     password: ''

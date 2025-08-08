@@ -28,20 +28,35 @@ export const useAuthStore = create<AuthState>()(
       initialized: false,
 
       // Actions
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        console.log('💾 Auth Store: Setting user:', user?.email);
+        set({ user });
+      },
       
-      setProfile: (profile) => set({ profile }),
+      setProfile: (profile) => {
+        console.log('💾 Auth Store: Setting profile:', profile?.email, profile?.user_role);
+        set({ profile });
+      },
       
-      setLoading: (loading) => set({ loading }),
+      setLoading: (loading) => {
+        console.log('💾 Auth Store: Setting loading:', loading);
+        set({ loading });
+      },
       
-      setInitialized: (initialized) => set({ initialized }),
+      setInitialized: (initialized) => {
+        console.log('💾 Auth Store: Setting initialized:', initialized);
+        set({ initialized });
+      },
       
-      clearAuth: () => set({
-        user: null,
-        profile: null,
-        loading: false,
-        initialized: true
-      }),
+      clearAuth: () => {
+        console.log('💾 Auth Store: Clearing auth');
+        set({
+          user: null,
+          profile: null,
+          loading: false,
+          initialized: true
+        });
+      },
       
       updateProfile: (updates) => {
         const currentProfile = get().profile;
@@ -62,7 +77,22 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         profile: state.profile,
         initialized: state.initialized
-      })
+      }),
+      // Add error handling for corrupted storage
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('💾 Auth Store: Rehydration error, clearing storage:', error);
+          // Clear corrupted storage
+          localStorage.removeItem('saverly-auth-storage');
+          return;
+        }
+        console.log('💾 Auth Store: Rehydrated with state:', {
+          hasUser: !!state?.user,
+          hasProfile: !!state?.profile,
+          initialized: state?.initialized,
+          loading: state?.loading
+        });
+      }
     }
   )
 );

@@ -26,6 +26,12 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthProvider();
   
+  console.log('🏠 AuthProvider rendering with state:', {
+    loading: auth.loading,
+    hasUser: !!auth.user,
+    hasProfile: !!auth.profile
+  });
+  
   // Add updateUser as alias for updateProfile
   const contextValue = {
     ...auth,

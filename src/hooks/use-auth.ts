@@ -19,36 +19,80 @@ export function useAuthProvider() {
 
   // Initialize auth state with race condition protection
   const initializeAuth = useCallback(async () => {
-    if (initialized) return;
+    console.log('🚀 Auth initialization starting...', { initialized, loading });
+    if (initialized) {
+      console.log('🚀 Already initialized, skipping');
+      return;
+    }
     
     try {
-      const { user: currentUser } = await api.auth.getUser();
+      console.log('🚀 Getting current user from Supabase...');
+      const { user: currentUser, error: userError } = await api.auth.getUser();
+      
+      console.log('🚀 Current user result:', { 
+        hasUser: !!currentUser, 
+        userId: currentUser?.id, 
+        email: currentUser?.email,
+        error: userError?.message 
+      });
+      
       if (currentUser) {
         const authUser: AuthUser = {
           uid: currentUser.id,
           id: currentUser.id,
           email: currentUser.email || undefined
         };
+        console.log('🚀 Setting auth user:', authUser);
         setUser(authUser);
-      }
-      
-      if (currentUser) {
-        const { data: profileData } = await api.users.getById(currentUser.id);
-        setProfile(profileData);
+        
+        console.log('🚀 Fetching user profile...');
+        const { data: profileData, error: profileError } = await api.users.getById(currentUser.id);
+        
+        if (profileError) {
+          console.error('🚀 Profile fetch error:', profileError);
+          // Don't fail completely - user can still be authenticated without profile
+          setProfile(null);
+        } else {
+          console.log('🚀 Profile loaded:', { 
+            id: profileData?.id, 
+            email: profileData?.email, 
+            role: profileData?.user_role 
+          });
+          setProfile(profileData);
+        }
+      } else {
+        console.log('🚀 No current user found');
+        setUser(null);
+        setProfile(null);
       }
     } catch (error) {
-      console.error('Error getting initial session:', error);
+      console.error('🚀 Error during auth initialization:', error);
       // Clear state on error
       clearAuth();
     } finally {
+      console.log('🚀 Auth initialization complete, setting loading=false');
       setLoading(false);
       setInitialized(true);
     }
-  }, [initialized, setUser, setProfile, setLoading, setInitialized, clearAuth]);
+  }, [initialized, loading, setUser, setProfile, setLoading, setInitialized, clearAuth]);
 
   useEffect(() => {
+    console.log('🚀 useEffect triggered for auth initialization');
     initializeAuth();
-  }, [initializeAuth]);
+    
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading && !initialized) {
+        console.error('🚀 Auth initialization timeout - forcing completion');
+        setLoading(false);
+        setInitialized(true);
+      }
+    }, 10000); // 10 second timeout
+    
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [initializeAuth, loading, initialized, setLoading, setInitialized]);
 
   const signIn = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
     console.log('🔐 Starting sign in for:', email);

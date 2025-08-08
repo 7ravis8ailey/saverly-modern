@@ -6,6 +6,7 @@ import { Navbar } from './components/layout/navbar'
 import { LandingPage } from './pages/landing'
 import { HomePage } from './pages/home'
 import { AuthForm } from './components/auth/auth-form'
+import { SimpleAuthForm } from './components/auth/simple-auth-form'
 import ProfilePage from './pages/ProfilePage'
 import SubscriptionMarketingPage from './pages/SubscriptionMarketingPage'
 import CouponsPage from './pages/CouponsPage'
@@ -30,6 +31,7 @@ function AppContent() {
           <Route path="/auth" element={<AuthForm />} />
           <Route path="/auth/login" element={<AuthForm />} />
           <Route path="/auth/register" element={<AuthForm />} />
+          <Route path="/simple-auth" element={<SimpleAuthForm />} />
           
           {/* Dashboard route - shows different views based on subscription status */}
           <Route path="/dashboard" element={<HomePage />} />
