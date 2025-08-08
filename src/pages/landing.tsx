@@ -24,14 +24,6 @@ export function LandingPage() {
     // Don't redirect while loading or if no user
     if (loading || !user) return
 
-    console.log('🔍 Landing Page Debug:', {
-      user: user,
-      profile: profile,
-      userEmail: user.email,
-      profileAccountType: profile?.account_type,
-      profileIsAdmin: profile?.is_admin
-    })
-
     // Check if user is admin - with multiple fallbacks including direct email check
     const isAdmin = profile?.user_role === 'admin' ||
                    profile?.is_admin === true ||
@@ -39,20 +31,15 @@ export function LandingPage() {
                    user.email === 'admin@test.saverly' ||
                    user.email?.includes('admin')
     
-    console.log('🏛️ Admin check result:', isAdmin)
-    
     if (isAdmin) {
-      console.log('🚀 Redirecting to admin dashboard')
       navigate('/admin', { replace: true })
       return
     }
     
     // Check subscription status for regular users
     if (profile?.subscription_status === 'active') {
-      console.log('🎯 Redirecting to active user dashboard')
       navigate('/dashboard', { replace: true })
     } else {
-      console.log('🎯 Redirecting to inactive user dashboard')
       navigate('/dashboard?subscriber=false', { replace: true })
     }
   }, [user, profile, loading, navigate])
