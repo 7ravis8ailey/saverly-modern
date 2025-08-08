@@ -21,8 +21,25 @@ export function LandingPage() {
 
   // Handle authenticated user routing
   useEffect(() => {
+    console.log('🏠 Landing page routing check:', { 
+      loading, 
+      hasUser: !!user, 
+      userEmail: user?.email,
+      hasProfile: !!profile, 
+      userRole: profile?.user_role, 
+      isAdmin: profile?.is_admin 
+    });
+    
     // Don't redirect while loading or if no user
-    if (loading || !user) return
+    if (loading) {
+      console.log('🏠 Still loading, waiting...');
+      return;
+    }
+    
+    if (!user) {
+      console.log('🏠 No user found, showing landing page');
+      return;
+    }
 
     // Check if user is admin - with multiple fallbacks including direct email check
     const isAdmin = profile?.user_role === 'admin' ||
@@ -31,15 +48,27 @@ export function LandingPage() {
                    user.email === 'admin@test.saverly' ||
                    user.email?.includes('admin')
     
+    console.log('🏠 Admin check result:', { isAdmin, checks: {
+      userRole: profile?.user_role === 'admin',
+      isAdminFlag: profile?.is_admin === true,
+      emailContainsAdmin: profile?.email?.includes('admin'),
+      userEmailTest: user.email === 'admin@test.saverly',
+      userEmailContainsAdmin: user.email?.includes('admin')
+    }});
+    
     if (isAdmin) {
+      console.log('🏠 Redirecting admin to /admin');
       navigate('/admin', { replace: true })
       return
     }
     
     // Check subscription status for regular users
+    console.log('🏠 Regular user routing, subscription status:', profile?.subscription_status);
     if (profile?.subscription_status === 'active') {
+      console.log('🏠 Redirecting active subscriber to /dashboard');
       navigate('/dashboard', { replace: true })
     } else {
+      console.log('🏠 Redirecting non-subscriber to /dashboard?subscriber=false');
       navigate('/dashboard?subscriber=false', { replace: true })
     }
   }, [user, profile, loading, navigate])

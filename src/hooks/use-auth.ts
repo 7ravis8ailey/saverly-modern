@@ -51,9 +51,11 @@ export function useAuthProvider() {
   }, [initializeAuth]);
 
   const signIn = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
+    console.log('🔐 Starting sign in for:', email);
     setLoading(true);
     try {
       const { data, error } = await api.auth.signIn(email, password);
+      console.log('🔐 Sign in response:', { success: !error, userId: data?.user?.id });
       
       if (!error && data.user) {
         const authUser: AuthUser = {
@@ -61,13 +63,29 @@ export function useAuthProvider() {
           id: data.user.id,
           email: data.user.email || undefined
         };
+        console.log('🔐 Setting user in auth store:', authUser);
         setUser(authUser);
-        const { data: profileData } = await api.users.getById(data.user.id);
+        
+        console.log('🔐 Fetching user profile...');
+        const { data: profileData, error: profileError } = await api.users.getById(data.user.id);
+        
+        if (profileError) {
+          console.error('🔐 Profile fetch error:', profileError);
+        } else {
+          console.log('🔐 Profile fetched successfully:', { 
+            id: profileData?.id, 
+            email: profileData?.email, 
+            user_role: profileData?.user_role,
+            is_admin: profileData?.is_admin 
+          });
+        }
+        
         setProfile(profileData);
       }
       
       return { error };
     } catch (error) {
+      console.error('🔐 Sign in error:', error);
       const authError: AuthError = {
         message: error instanceof Error ? error.message : 'Sign in failed',
         code: 'AUTH_ERROR'
@@ -75,6 +93,7 @@ export function useAuthProvider() {
       return { error: authError };
     } finally {
       setLoading(false);
+      console.log('🔐 Sign in process complete');
     }
   };
 

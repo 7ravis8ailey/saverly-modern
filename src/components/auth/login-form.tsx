@@ -13,7 +13,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onToggleMode }: LoginFormProps) {
   const navigate = useNavigate()
-  const { signIn, loading, user } = useAuth()
+  const { signIn, loading, user, profile } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -21,6 +21,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [touched, setTouched] = useState<{[key: string]: boolean}>({})
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
 
@@ -28,6 +29,35 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
   useEffect(() => {
     emailRef.current?.focus()
   }, [])
+
+  // Handle post-login routing after auth state updates
+  useEffect(() => {
+    if (isLoggedIn && user && profile) {
+      console.log('Auth state updated, redirecting...', { user: user.email, profile: profile.user_role })
+      
+      // Check if user is admin
+      const isAdmin = profile?.user_role === 'admin' ||
+                     profile?.is_admin === true ||
+                     profile?.email?.includes('admin') || 
+                     user.email === 'admin@test.saverly' ||
+                     user.email?.includes('admin')
+      
+      if (isAdmin) {
+        navigate('/admin', { replace: true })
+        return
+      }
+      
+      // Regular user routing
+      if (profile.subscription_status === 'active') {
+        navigate('/dashboard', { replace: true })
+      } else {
+        navigate('/dashboard?subscriber=false', { replace: true })
+      }
+    } else if (isLoggedIn && user && !profile) {
+      // User exists but profile is still loading - wait a bit more
+      console.log('User logged in but profile still loading...')
+    }
+  }, [isLoggedIn, user, profile, navigate])
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors }
@@ -120,8 +150,9 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
         variant: "success"
       })
       
-      // Redirect to landing page which will handle routing based on user type
-      navigate('/')
+      // Mark as logged in - useEffect will handle routing when auth state updates
+      setIsLoggedIn(true)
+      console.log('Login successful, waiting for auth state to update...')
     }
   }
 
